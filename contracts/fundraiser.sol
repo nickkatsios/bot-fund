@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.18;
 
+import "./BotToken.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -25,24 +26,24 @@ contract Fundraiser {
     // the corresponding amount of bot tokens to receive for every whitelisted token sent
     mapping(address => uint) public tokenRewardRate;
 
-    IERC20 public botToken; 
+    BotToken public botToken; 
 
     event FundsReceived(address indexed participant , address indexed token , uint indexed amount);
     event Withdraw(address bot);
     event TargetHit(address indexed token);
 
     constructor(address[] memory _acceptedTokens , uint[] memory _targetAmounts , address _bot , address _botToken) {
-        require(acceptedTokens.length() == _targetAmounts.length() , "Invalid input");
+        require(acceptedTokens.length == _targetAmounts.length , "Invalid input");
         owner = msg.sender;
         bot = _bot;
         acceptedTokens = _acceptedTokens;
-        botToken = IERC20(_botToken);
-        for(uint i = 0 ; i < _acceptedTokens.length() ; i++ ) {
+        botToken = BotToken(_botToken);
+        for(uint i = 0 ; i < _acceptedTokens.length ; i++ ) {
            targets[_acceptedTokens[i]] = _targetAmounts[i];
         }
     }
 
-    function receiveFunds(address token , uint amount) public returns(uint) {
+    function receiveFunds(address token , uint amount) public {
         // check to see if token is in allowlist
         require(isTokenAccepted(token) , "Token not accepted by fundraiser ");
         // check to see the amount sent for the token is > 0 
@@ -52,7 +53,7 @@ contract Fundraiser {
         // update targets and balances
         updateTargetsAndBalances(token , amount);
         // mint the bot tokens to the user
-        distributeBotTokens(msg.sender);
+        distributeBotTokens(msg.sender , token);
         emit FundsReceived(msg.sender , token , amount);
     }
 
@@ -68,7 +69,7 @@ contract Fundraiser {
         emit Withdraw(bot);
     }
 
-    function distributeBotTokens(address participant , address token) internal view {
+    function distributeBotTokens(address participant , address token) internal {
         // get reward rate for the token
         uint amountToMint = tokenRewardRate[token]; 
         // mint bot tokens and tranfer them to participant address
@@ -101,7 +102,7 @@ contract Fundraiser {
 
     // checks to see if the token is in the whitelist
     function isTokenAccepted(address token) public view returns(bool) {
-        for(uint i = 0 ; i < acceptedTokens.length() ; i++ ) {
+        for(uint i = 0 ; i < acceptedTokens.length ; i++ ) {
             if(token == acceptedTokens[i]) {
                 return true;
             }
