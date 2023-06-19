@@ -5,6 +5,8 @@ import "./BotToken.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import "hardhat/console.sol";
+
 contract Fundraiser {
 
     // the address of the bot owner
@@ -33,7 +35,7 @@ contract Fundraiser {
     event TargetHit(address indexed token);
 
     constructor(address[] memory _acceptedTokens , uint[] memory _targetAmounts , address _bot , address _botToken) {
-        require(acceptedTokens.length == _targetAmounts.length , "Invalid input");
+        require(_acceptedTokens.length == _targetAmounts.length , "Invalid input");
         owner = msg.sender;
         bot = _bot;
         acceptedTokens = _acceptedTokens;
