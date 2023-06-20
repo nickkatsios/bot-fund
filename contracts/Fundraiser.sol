@@ -34,28 +34,32 @@ contract Fundraiser {
     event Withdraw(address bot);
     event TargetHit(address indexed token);
 
-    constructor(address[] memory _acceptedTokens , uint[] memory _targetAmounts , address _bot , address _botToken) {
-        require(_acceptedTokens.length == _targetAmounts.length , "Invalid input");
+    constructor(address[] memory _acceptedTokens , uint[] memory _targetAmounts , uint[] memory _tokenRewardRate,  address _bot , address _botToken) {
+        require(_acceptedTokens.length == _targetAmounts.length , "Array lenghts don't match");
         owner = msg.sender;
         bot = _bot;
         acceptedTokens = _acceptedTokens;
         botToken = BotToken(_botToken);
         for(uint i = 0 ; i < _acceptedTokens.length ; i++ ) {
-           targets[_acceptedTokens[i]] = _targetAmounts[i];
+           targets[acceptedTokens[i]] = _targetAmounts[i];
+           tokenRewardRate[acceptedTokens[i]] = _tokenRewardRate[i];
+           console.log(targets[acceptedTokens[i]]);
         }
     }
 
     function receiveFunds(address token , uint amount) public {
         // check to see if token is in allowlist
-        require(isTokenAccepted(token) , "Token not accepted by fundraiser ");
+        require(isTokenAccepted(token) , "Token not accepted by fundraiser");
         // check to see the amount sent for the token is > 0 
         require(amount > 0 , "amount needs to be greater than 0");
         // check to see if the target has been reached
-        require(!hasTokenHitTarget(token) , "Target for token already hit");
+        // require(!hasTokenHitTarget(token) , "Target for token already hit");
+        // Transfer tokens from sender to the fundraising contract
+        IERC20(token).transferFrom(msg.sender, address(this), amount);
         // update targets and balances
         updateTargetsAndBalances(token , amount);
         // mint the bot tokens to the user
-        distributeBotTokens(msg.sender , token);
+        distributeBotTokens(msg.sender , token , amount);
         emit FundsReceived(msg.sender , token , amount);
     }
 
@@ -71,9 +75,9 @@ contract Fundraiser {
         emit Withdraw(bot);
     }
 
-    function distributeBotTokens(address participant , address token) internal {
+    function distributeBotTokens(address participant , address token ,uint amount) internal {
         // get reward rate for the token
-        uint amountToMint = tokenRewardRate[token]; 
+        uint amountToMint = tokenRewardRate[token] * amount; 
         // mint bot tokens and tranfer them to participant address
         botToken.mint(participant , amountToMint);
     }
@@ -116,5 +120,7 @@ contract Fundraiser {
         require(msg.sender == owner);
         _;
     }
+
+
 
 }
