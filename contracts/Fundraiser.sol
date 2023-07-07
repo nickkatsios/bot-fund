@@ -3,6 +3,8 @@ pragma solidity ^0.8.18;
 
 import "./BotToken.sol";
 
+import "./SampleBot.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "hardhat/console.sol";
@@ -53,7 +55,7 @@ contract Fundraiser {
         // check to see the amount sent for the token is > 0 
         require(amount > 0 , "amount needs to be greater than 0");
         // check to see if the target has been reached
-        // require(!hasTokenHitTarget(token) , "Target for token already hit");
+        require(targets[token] > 0 , "Target for token already hit");
         // Transfer tokens from sender to the fundraising contract
         IERC20(token).transferFrom(msg.sender, address(this), amount);
         // update targets and balances
@@ -69,7 +71,7 @@ contract Fundraiser {
             address token = acceptedTokens[i];
             uint256 balance = IERC20(token).balanceOf(address(this));
             if (balance > 0) {
-                IERC20(token).transfer(bot, balance);
+                SampleBot(bot).transferToken(token , address(this), balance);
             }
         }
         emit Withdraw(bot);
@@ -99,11 +101,6 @@ contract Fundraiser {
     function getParticipantTokenBalance(address participant , address token) public view returns(uint) {
         // look up the amount raised by the participant address for the specific token
         return participantBalance[participant][token];
-    }
-
-    // check if remaining target is > 0
-    function hasTokenHitTarget(address token) public view returns(bool) {
-        return targets[token] > 0;
     }
 
     // checks to see if the token is in the whitelist

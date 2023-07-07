@@ -12,6 +12,8 @@ const { ethers } = require("hardhat");
       const [owner, otherAccount] = await ethers.getSigners();
       const Fundraiser = await ethers.getContractFactory("Fundraiser");
       const MockToken = await ethers.getContractFactory("MockToken")
+      const SampleBot = await ethers.getContractFactory("SampleBot")
+  
       const mockToken = await MockToken.deploy()
       await mockToken.deployed()
       const mockTokenAddress  = mockToken.address
@@ -25,7 +27,9 @@ const { ethers } = require("hardhat");
       const BotToken = await ethers.getContractFactory("BotToken")
       const botToken = await BotToken.deploy();
       await botToken.deployed()
-      const botTokenAddress = botToken.address
+      const sampleBot = await SampleBot.deploy(acceptedTokens)
+      await sampleBot.deployed()
+      const botTokenAddress = sampleBot.address
       // bot address
       const botAddress = otherAccount.address
       // deployment
@@ -83,20 +87,46 @@ const { ethers } = require("hardhat");
           const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
           // No need to mint as handled in the mock contract
           // Get the balance of the sending account before sending tokens (optional)
-          const balanceBefore = await mockToken.balanceOf(fundraiser.address);
-          console.log("Account balance before sending tokens:", balanceBefore.toString());
-
           // Call the contract function that accepts tokens
           const amountToSend = ethers.utils.parseEther("10");
           await mockToken.connect(owner).approve(fundraiser.address, amountToSend);
           await fundraiser.receiveFunds(mockToken.address , amountToSend , {gasLimit: 10000000});
+        });
 
-          // Get the balance of the sending account after sending tokens (optional)
-          const balanceAfter = await mockToken.balanceOf(fundraiser.address);
-          console.log("Fundraiser balance after sending tokens:", balanceAfter.toString());// (Replace with the appropriate function to fund the account with tokens)
+        it("should update user balance in fund ", async function () {
+          const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+          const amountToSend = ethers.utils.parseEther("10");
+          await mockToken.connect(owner).approve(fundraiser.address, amountToSend);
+          await fundraiser.receiveFunds(mockToken.address , amountToSend , {gasLimit: 10000000});
+          expect(await fundraiser.participantBalance(owner.address , mockToken.address)).to.equal(ethers.utils.parseEther("10"));
+        });
+
+        it("should revert on target hit", async function () {
+          const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+          const amountToSend = ethers.utils.parseEther("10000000");
+          await mockToken.connect(owner).approve(fundraiser.address, amountToSend);
+          await fundraiser.receiveFunds(mockToken.address , amountToSend , {gasLimit: 10000000});
+          // target hit
+          const amountToSend2 = ethers.utils.parseEther("1");
+          await mockToken.connect(owner).approve(fundraiser.address, amountToSend2);
+          await expect(fundraiser.receiveFunds(mockToken.address , amountToSend2 , {gasLimit: 10000000})).to.be.revertedWith("Target for token already hit");
         });
         
-  
         });
+
+        describe("Withdraw funds", function () {
+
+          it("should withdraw funds to bot", async function () {
+            const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+            const amountToSend = ethers.utils.parseEther("10000000");
+            await mockToken.connect(owner).approve(fundraiser.address, amountToSend);
+            await fundraiser.receiveFunds(mockToken.address , amountToSend , {gasLimit: 10000000});
+            const tokenBalance = await mockToken.balanceOf(fundraiser.address);
+            console.log(tokenBalance)
+            await fundraiser.withdrawFundsToBot()
+            // expect()
+          });
+        
+          });
 
   });
