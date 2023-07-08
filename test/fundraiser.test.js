@@ -27,16 +27,16 @@ const { ethers } = require("hardhat");
       const BotToken = await ethers.getContractFactory("BotToken")
       const botToken = await BotToken.deploy();
       await botToken.deployed()
-      const sampleBot = await SampleBot.deploy(acceptedTokens)
-      await sampleBot.deployed()
-      const botTokenAddress = sampleBot.address
+      const botTokenAddress = botToken.address
       // bot address
-      const botAddress = otherAccount.address
+      const sampleBot = await SampleBot.deploy()
+      await sampleBot.deployed()
+      const botAddress = sampleBot.address
       // deployment
       const fundraiser = await Fundraiser.deploy(acceptedTokens, targetAmounts, rewardRates, botAddress , botTokenAddress , {gasLimit: 10000000});
       await fundraiser.deployed()
       await botToken.transferOwnership(fundraiser.address)
-      return { owner , botToken , mockToken ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress};
+      return { owner , botToken , mockToken ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress, sampleBot};
     }
   
     describe("Deployment", function () {
@@ -117,14 +117,16 @@ const { ethers } = require("hardhat");
         describe("Withdraw funds", function () {
 
           it("should withdraw funds to bot", async function () {
-            const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+            const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress , sampleBot} = await loadFixture(deployFundraiser);
             const amountToSend = ethers.utils.parseEther("10000000");
             await mockToken.connect(owner).approve(fundraiser.address, amountToSend);
             await fundraiser.receiveFunds(mockToken.address , amountToSend , {gasLimit: 10000000});
             const tokenBalance = await mockToken.balanceOf(fundraiser.address);
             console.log(tokenBalance)
             await fundraiser.withdrawFundsToBot()
-            // expect()
+            const botBalance = await mockToken.balanceOf(sampleBot.address);
+            console.log(botBalance) 
+            expect(botBalance).to.equal(ethers.utils.parseEther("10000000"))
           });
         
           });

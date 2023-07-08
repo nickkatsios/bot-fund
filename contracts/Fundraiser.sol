@@ -3,8 +3,6 @@ pragma solidity ^0.8.18;
 
 import "./BotToken.sol";
 
-import "./SampleBot.sol";
-
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "hardhat/console.sol";
@@ -71,7 +69,8 @@ contract Fundraiser {
             address token = acceptedTokens[i];
             uint256 balance = IERC20(token).balanceOf(address(this));
             if (balance > 0) {
-                SampleBot(bot).transferToken(token , address(this), balance);
+                IERC20(token).approve(address(this), balance);
+                IERC20(token).transferFrom(address(this), bot , balance);
             }
         }
         emit Withdraw(bot);
