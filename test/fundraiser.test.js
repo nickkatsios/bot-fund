@@ -22,7 +22,7 @@ const { ethers } = require("hardhat");
       // target amounts
       const targetAmounts = [ethers.utils.parseEther("10000000")];
       // reward rates
-      const rewardRates = [1];
+      const rewardRates = [2];
       // bot token address
       const BotToken = await ethers.getContractFactory("BotToken")
       const botToken = await BotToken.deploy();
@@ -101,6 +101,16 @@ const { ethers } = require("hardhat");
           expect(await fundraiser.participantBalance(owner.address , mockToken.address)).to.equal(ethers.utils.parseEther("10"));
         });
 
+        it("should mint bot tokens to user according to reward rate ", async function () {
+          const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+          const amountToSend = ethers.utils.parseEther("10");
+          const botTokenBalanceBefore = await botToken.balanceOf(owner.address)
+          console.log(botTokenBalanceBefore)
+          await mockToken.connect(owner).approve(fundraiser.address, amountToSend);
+          await fundraiser.receiveFunds(mockToken.address , amountToSend , {gasLimit: 10000000});
+          expect(await botToken.balanceOf(owner.address)).to.equal(ethers.utils.parseEther("1020"));
+        });
+
         it("should revert on target hit", async function () {
           const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
           const amountToSend = ethers.utils.parseEther("10000000");
@@ -122,10 +132,8 @@ const { ethers } = require("hardhat");
             await mockToken.connect(owner).approve(fundraiser.address, amountToSend);
             await fundraiser.receiveFunds(mockToken.address , amountToSend , {gasLimit: 10000000});
             const tokenBalance = await mockToken.balanceOf(fundraiser.address);
-            console.log(tokenBalance)
             await fundraiser.withdrawFundsToBot()
             const botBalance = await mockToken.balanceOf(sampleBot.address);
-            console.log(botBalance) 
             expect(botBalance).to.equal(ethers.utils.parseEther("10000000"))
           });
         
