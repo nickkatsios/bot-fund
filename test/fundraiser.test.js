@@ -126,7 +126,6 @@ const { ethers } = require("hardhat");
             const amountToSend = ethers.utils.parseEther("10000000");
             await mockToken.connect(owner).approve(fundraiser.address, amountToSend);
             await fundraiser.receiveFunds(mockToken.address , amountToSend , {gasLimit: 10000000});
-            const tokenBalance = await mockToken.balanceOf(fundraiser.address);
             await fundraiser.withdrawFundsToBot()
             const botBalance = await mockToken.balanceOf(sampleBot.address);
             expect(botBalance).to.equal(ethers.utils.parseEther("10000000"))

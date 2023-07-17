@@ -28,6 +28,7 @@ contract Fundraiser {
     // the corresponding amount of bot tokens to receive for every whitelisted token sent
     mapping(address => uint) public tokenRewardRate;
 
+    // the bot token rewarded to the user for staking
     BotToken public botToken; 
 
     event FundsReceived(address indexed participant , address indexed token , uint indexed amount);
@@ -47,6 +48,12 @@ contract Fundraiser {
         }
     }
 
+    /**
+     * @notice Receives funds from users updates balances
+     * and mints corresponding botTokens
+     * @param token the token address being sent
+     * @param amount the amount of the corresponding token
+     */
     function receiveFunds(address token , uint amount) public {
         // check to see if token is in allowlist
         require(isTokenAccepted(token) , "Token not accepted by fundraiser");
@@ -63,19 +70,27 @@ contract Fundraiser {
         emit FundsReceived(msg.sender , token , amount);
     }
 
-    // after the fundraiser is over the owner withdraws the funds to the bot
+    /**
+     * @notice after the fundraiser is over the owner withdraws the funds to the bot
+     */
     function withdrawFundsToBot() onlyOwner public {
         for (uint256 i = 0; i < acceptedTokens.length; i++) {
             address token = acceptedTokens[i];
             uint256 balance = IERC20(token).balanceOf(address(this));
             if (balance > 0) {
-                IERC20(token).approve(address(this), balance);
-                IERC20(token).transferFrom(address(this), bot , balance);
+                IERC20(token).transfer(bot , balance);
             }
         }
         emit Withdraw(bot);
     }
 
+    /**
+     * @notice Mints bot tokens to the participant address ,
+     * representing his stake to the bot fund 
+     * @param participant the participant address to the fundraiser
+     * @param token the token address being sent
+     * @param amount the amount of the corresponding token the participant has sent
+     */
     function distributeBotTokens(address participant , address token ,uint amount) internal {
         // get reward rate for the token
         uint amountToMint = tokenRewardRate[token] * amount; 
@@ -83,7 +98,12 @@ contract Fundraiser {
         botToken.mint(participant , amountToMint);
     }
 
-    // updates the state of the contract after receiveing funds
+    /**
+     * @notice Receives funds from users updates balances
+     * and mints corresponding botTokens
+     * @param token the token address being sent
+     * @param amount the amount of the corresponding token
+     */
     function updateTargetsAndBalances(address token , uint amount) internal {
         uint change;
         if (targets[token] < amount) {
@@ -97,12 +117,20 @@ contract Fundraiser {
         participantBalance[msg.sender][token] += change;
     }
 
+    /**
+     * @notice Retrieves the balance of a token sent by a participant 
+     * @param participant the participant address
+     * @param token the token address to look up 
+     */
     function getParticipantTokenBalance(address participant , address token) public view returns(uint) {
         // look up the amount raised by the participant address for the specific token
         return participantBalance[participant][token];
     }
 
-    // checks to see if the token is in the whitelist
+    /**
+     * @notice Checks if a token is accepted in the fund 
+     * @param token the token address
+     */
     function isTokenAccepted(address token) public view returns(bool) {
         for(uint i = 0 ; i < acceptedTokens.length ; i++ ) {
             if(token == acceptedTokens[i]) {
