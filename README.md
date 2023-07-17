@@ -34,3 +34,4 @@ npx hardhat test
 Feel free to add new tests if needed.
 
 ## Diagram of fund flow
+![flow]([https://github.com/nickkatsios/bot-fund/blob/master/media/flow.png)
