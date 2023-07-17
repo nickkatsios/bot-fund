@@ -40,23 +40,19 @@ const { ethers } = require("hardhat");
     }
   
     describe("Deployment", function () {
-
-      it("should deploy", async function () {
-        const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
-      });
       
       it("should set the correct owner", async () => {
-        const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+        const { owner , fundraiser} = await loadFixture(deployFundraiser);
         expect(await fundraiser.owner()).to.equal(owner.address);
       });
     
       it("should set the correct bot address", async () => {
-        const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+        const {fundraiser , botAddress} = await loadFixture(deployFundraiser);
         expect(await fundraiser.bot()).to.equal(botAddress);
       });
     
       it("should set the correct accepted tokens", async () => {
-        const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+        const {fundraiser , acceptedTokens} = await loadFixture(deployFundraiser);
         const tokenCount = acceptedTokens.length;
         for (let i = 0; i < tokenCount; i++) {
           const tokenAddress = acceptedTokens[i];
@@ -65,12 +61,12 @@ const { ethers } = require("hardhat");
       });
     
       it("should set the correct bot token", async () => {
-        const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+        const { botToken ,fundraiser} = await loadFixture(deployFundraiser);
         expect(await fundraiser.botToken()).to.equal(botToken.address);
       });
     
       it("should set the correct reward rates for each token", async () => {
-        const { owner , botToken  , mockToken ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+        const {fundraiser , acceptedTokens, rewardRates} = await loadFixture(deployFundraiser);
         const tokenCount = acceptedTokens.length;
         for (let i = 0; i < tokenCount; i++) {
           const tokenAddress = acceptedTokens[i];
@@ -84,7 +80,7 @@ const { ethers } = require("hardhat");
       describe("Receive funds", function () {
 
         it("should send whitelisted tokens ", async function () {
-          const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+          const { owner, mockToken  ,fundraiser} = await loadFixture(deployFundraiser);
           // No need to mint as handled in the mock contract
           // Get the balance of the sending account before sending tokens (optional)
           // Call the contract function that accepts tokens
@@ -94,7 +90,7 @@ const { ethers } = require("hardhat");
         });
 
         it("should update user balance in fund ", async function () {
-          const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+          const { owner, mockToken  ,fundraiser } = await loadFixture(deployFundraiser);
           const amountToSend = ethers.utils.parseEther("10");
           await mockToken.connect(owner).approve(fundraiser.address, amountToSend);
           await fundraiser.receiveFunds(mockToken.address , amountToSend , {gasLimit: 10000000});
@@ -102,17 +98,16 @@ const { ethers } = require("hardhat");
         });
 
         it("should mint bot tokens to user according to reward rate ", async function () {
-          const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+          const { owner , botToken , mockToken  ,fundraiser } = await loadFixture(deployFundraiser);
           const amountToSend = ethers.utils.parseEther("10");
           const botTokenBalanceBefore = await botToken.balanceOf(owner.address)
-          console.log(botTokenBalanceBefore)
           await mockToken.connect(owner).approve(fundraiser.address, amountToSend);
           await fundraiser.receiveFunds(mockToken.address , amountToSend , {gasLimit: 10000000});
           expect(await botToken.balanceOf(owner.address)).to.equal(ethers.utils.parseEther("1020"));
         });
 
         it("should revert on target hit", async function () {
-          const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress} = await loadFixture(deployFundraiser);
+          const { owner , mockToken  ,fundraiser} = await loadFixture(deployFundraiser);
           const amountToSend = ethers.utils.parseEther("10000000");
           await mockToken.connect(owner).approve(fundraiser.address, amountToSend);
           await fundraiser.receiveFunds(mockToken.address , amountToSend , {gasLimit: 10000000});
@@ -127,7 +122,7 @@ const { ethers } = require("hardhat");
         describe("Withdraw funds", function () {
 
           it("should withdraw funds to bot", async function () {
-            const { owner , botToken , mockToken  ,fundraiser , acceptedTokens , targetAmounts, rewardRates, botAddress , botTokenAddress , sampleBot} = await loadFixture(deployFundraiser);
+            const { owner , mockToken  ,fundraiser , sampleBot} = await loadFixture(deployFundraiser);
             const amountToSend = ethers.utils.parseEther("10000000");
             await mockToken.connect(owner).approve(fundraiser.address, amountToSend);
             await fundraiser.receiveFunds(mockToken.address , amountToSend , {gasLimit: 10000000});
@@ -138,5 +133,4 @@ const { ethers } = require("hardhat");
           });
         
           });
-
   });

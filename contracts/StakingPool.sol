@@ -3,7 +3,7 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract StakingRewards {
+contract StakingPool {
     IERC20 public immutable stakingToken;
     IERC20 public immutable rewardsToken;
 
